@@ -21,6 +21,7 @@ public:
 	}S_RECT;
 public:
 	static void PrintLog(const char* file, const char* func, int line, const char* fmt, ...);
+	static std::string GetSolutionPathDir();
 	static std::string GetProjectPathDir();
 	static std::string GetRootPathDir();
 	static std::string GetResourcePathDir();

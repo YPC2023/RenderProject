@@ -4,8 +4,6 @@
 #include <sstream>
 #include <Windows.h>
 
-#define IDM_PROJECT_ROOT_PATH	    "D:\\PROJECT\\RenderProject\\Project\\"
-
 void CUtils::PrintLog(const char* file, const char* func, int line, const char* fmt, ...)
 {
     // 格式化用户消息
@@ -15,6 +13,11 @@ void CUtils::PrintLog(const char* file, const char* func, int line, const char* 
     vfprintf(stdout, fmt, args);
     fprintf(stdout, "\n");
     va_end(args);
+}
+
+std::string CUtils::GetSolutionPathDir()
+{
+    return (std::string(SOLUTION_DIR_PATH) + "\\");
 }
 
 std::string CUtils::GetProjectPathDir()
@@ -43,7 +46,7 @@ std::string CUtils::GetProjectPathDir()
 
 std::string CUtils::GetRootPathDir()
 {
-    return IDM_PROJECT_ROOT_PATH;
+    return GetSolutionPathDir();
 }
 
 std::string CUtils::GetResourcePathDir()
