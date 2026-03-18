@@ -41,9 +41,9 @@ void CEngine::Resize(int width, int height)
 	CSceneManager::GetInstance().GetMainScene().Resize(width, height);
 }
 
-void CEngine::MouseAction(unsigned int key, bool down, int x, int y)
+void CEngine::MouseAction(unsigned int key, int action, int x, int y)
 {
-	CSceneManager::GetInstance().GetMainScene().MouseAction(key, down, x, y);
+	CSceneManager::GetInstance().GetMainScene().MouseAction(key, action, x, y);
 }
 
 void CEngine::KeyboardAction(unsigned int key, const char* name, bool down)

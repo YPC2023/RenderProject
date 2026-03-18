@@ -30,7 +30,7 @@ void CWindow::OnSize(int x, int y)
 	//PRINTLOG("%s(%d,%d)",m_strName.c_str(), x, y);
 }
 
-void CWindow::OnMouseAction(unsigned int key, bool down, int x, int y)
+void CWindow::OnMouseAction(unsigned int key, E_MOUSE_ACTION action, int x, int y)
 {
 	//PRINTLOG("%s[%d:%s](%d,%d)", m_strName.c_str(), key, down ? "DOWN" : "UP", x, y);
 }
@@ -96,16 +96,28 @@ void CWindow::CheckSizeAction()
 
 void CWindow::CheckMouseAction()
 {
+	static ImVec2 lastPosition(0.0f, 0.0f);
 	if (!ImGui::IsWindowHovered()) {
 		return;
 	}
+	ImVec2 curPosition = ImGui::GetIO().MousePos;
+	uint pressKey = ImGuiMouseButton_COUNT;
 	for (uint key = ImGuiMouseButton_Left; key < ImGuiMouseButton_COUNT; ++key) {
 		if (ImGui::IsMouseClicked(key)) {
-			OnMouseAction(key, true, 0, 0);
+			OnMouseAction(key, E_MOUSE_DOWN, (int)curPosition.x, (int)curPosition.y);
 		}
 		else if (ImGui::IsMouseReleased(key)) {
-			OnMouseAction(key, false, 0, 0);
+			OnMouseAction(key, E_MOUSE_UP, (int)curPosition.x, (int)curPosition.y);
 		}
+		if (ImGui::IsMouseDown(key)) {
+			pressKey = key;
+		}
+	}
+	int dx = (int)(curPosition.x - lastPosition.x);
+	int dy = (int)(curPosition.y - lastPosition.y);
+	if (0 != dx || 0 != dy) {
+		OnMouseAction(pressKey, E_MOUSE_MOVE, (int)curPosition.x, (int)curPosition.y);
+		lastPosition = curPosition;
 	}
 }
 

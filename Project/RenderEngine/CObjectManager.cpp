@@ -53,6 +53,8 @@ CModel* CObjectManager::GetCoordModel(float size)
 		pModel->AppendMesh(pMeshX);
 		pModel->AppendMesh(pMeshY);
 		pModel->AppendMesh(pMeshZ);
+
+		pModel->SetCoordinate();
 	}
 	return pModel;
 }

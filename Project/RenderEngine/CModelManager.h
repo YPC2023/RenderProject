@@ -16,6 +16,7 @@ public:
 public:
 	void EnableRenderId(bool bEnable = true);
 	void SelectedModel(unsigned int id);
+	CModel* FindModel(unsigned int id);
 private:
 	std::map<unsigned int, CModel*>			m_map_Model;
 };

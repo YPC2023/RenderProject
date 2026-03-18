@@ -17,7 +17,7 @@ public:
 	void Render() override;
 public:
 	void Resize(int width, int height);
-	void MouseAction(unsigned int key, bool down, int x, int y);
+	void MouseAction(unsigned int key, int action, int x, int y);
 	void KeyboardAction(unsigned int key, const char* name, bool down);
 public:
 	unsigned int GetRenderTextureId();

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "CScene.h"
+#include "CModelManager.h"
 
 CScene::CScene()
 {
@@ -10,10 +11,14 @@ CScene::CScene()
     m_pModelCoord = 0;
     m_pModelChess = 0;
 
+    m_pModelSelected = 0;
+
     m_pNormalFramebuffer = 0;
     m_pSelectFramebuffer = 0;
 
     m_pCamera = 0;
+
+    m_bLeftMouseMoved = false;
 }
 
 bool CScene::Initialize()
@@ -74,14 +79,102 @@ unsigned int CScene::GetSelectId(int x, int y)
     return nSelectId;
 }
 
-void CScene::OnSelectAction(int originX, int originY, float x, float y)
+void CScene::SelectAction(int originX, int originY)
 {
     RenderSelect();
 
     unsigned int nSelectId = GetSelectId(originX, originY);
-    
+
     if (0 != m_pNormalRender) {
         m_pNormalRender->SetSelectId(nSelectId);
+    }
+
+    m_pModelSelected = CModelManager::GetInstance().FindModel(nSelectId);
+}
+
+glm::vec3 CScene::GetRayDirection(double mouseX, double mouseY) 
+{
+    int width = m_pConfig->GetViewportWidth();
+    int height = m_pConfig->GetViewportHeight();
+    const glm::mat4& viewMatrix = m_pCamera->GetView();
+    const glm::mat4& projectionMatrix = m_pCamera->GetProjection();
+
+    // 1. 将鼠标坐标转换为 NDC 坐标 (-1.0 到 1.0)
+    // 假设 mouseX, mouseY 来自 GLFW 回调 (左上角为 0,0)
+    float x = (2.0f * (float)mouseX) / (float)width - 1.0f;
+    float y = 1.0f - (2.0f * (float)mouseY) / (float)height;
+
+    // 2. 构造投影空间下的近裁剪面点 (z = -1.0)
+    // 注意 w 为 1.0，表示这是一个点
+    glm::vec4 ray_clip = glm::vec4(x, y, -1.0f, 1.0f);
+
+    // 3. 变换到观察空间 (Camera Space)
+    glm::vec4 ray_eye = glm::inverse(projectionMatrix) * ray_clip;
+
+    // 关键点：将 z 设为 -1 (向前看)，w 设为 0 (我们要的是方向向量，不是点)
+    // 这样在乘以 View 矩阵逆时，平移部分会被忽略
+    ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
+
+    // 4. 变换到世界空间 (World Space)
+    glm::vec3 ray_world = glm::vec3(glm::inverse(viewMatrix) * ray_eye);
+
+    // 5. 归一化，得到最终的射线方向
+    return glm::normalize(ray_world);
+}
+
+// 输入：鼠标射线向量 v, 相机位置 O, 模型当前位置 P0, 轴向量 u
+// 输出：模型沿轴移动后的距离
+float CScene::GetMovementOnAxis(glm::vec3 rayDir, glm::vec3 camPos, glm::vec3 modelPos, glm::vec3 axis)
+{
+    // 确保方向向量都是单位向量
+    glm::vec3 u = glm::normalize(axis);
+    glm::vec3 v = glm::normalize(rayDir);
+    glm::vec3 r = camPos - modelPos; // 注意符号，这里对应推导中的 O - P0
+
+    float b = glm::dot(u, v);
+    float d = glm::dot(u, r);
+    float e = glm::dot(v, r);
+
+    float denominator = 1.0f - b * b;
+
+    // 如果分母接近 0，说明射线与轴平行，无法产生有效位移
+    if (glm::abs(denominator) < 0.0001f) {
+        return 0.0f;
+    }
+
+    return (b * e - d) / denominator;
+}
+
+void CScene::OnMouseLeftDown(int originX, int originY, float x, float y)
+{
+    if (0 != m_pModelSelected) {
+        m_ModelPosition = m_pModelSelected->GetTranslation();
+        m_AxisTransform = glm::vec3(1.0f, 0.0f, 0.0f);
+        glm::vec3 rayDir = GetRayDirection(originX, originY);
+        m_StartPosition = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
+    }
+}
+
+void CScene::OnMouseLeftUp(int originX, int originY, float x, float y)
+{
+    if (m_bLeftMouseMoved && 0 != m_pModelSelected) {
+        m_pModelSelected->ActionTransform();
+        m_pModelSelected->ResetTranslation();
+    }
+    else {
+        SelectAction(originX, originY);
+    }
+    m_bLeftMouseMoved = false;
+}
+
+void CScene::OnMouseLeftMove(int originX, int originY, float x, float y)
+{
+    if (0 != m_pModelSelected) {
+        m_bLeftMouseMoved = true;
+        glm::vec3 rayDir = GetRayDirection(originX, originY);
+        float current = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
+
+        m_pModelSelected->SetTranslation(m_ModelPosition + m_AxisTransform * (m_StartPosition - current));
     }
 }
 

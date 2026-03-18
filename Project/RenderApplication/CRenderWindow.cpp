@@ -39,11 +39,11 @@ void CRenderWindow::OnSize(int x, int y)
 	CEngineManager::GetInstance().GetEngine().Resize((int)viewportSize.x, (int)viewportSize.y);
 }
 
-void CRenderWindow::OnMouseAction(unsigned int key, bool down, int x, int y)
+void CRenderWindow::OnMouseAction(unsigned int key, E_MOUSE_ACTION action, int x, int y)
 {
 	//PRINTLOG("%s[%d:%s](%d,%d)", m_strName.c_str(), key, down ? "DOWN" : "UP", x, y);
 	ImVec2 relativePos = GetRelativePosition(ImGui::GetIO().MousePos);
-	CEngineManager::GetInstance().GetEngine().MouseAction(key, down, (int)relativePos.x, (int)relativePos.y);
+	CEngineManager::GetInstance().GetEngine().MouseAction(key, (int)action, (int)relativePos.x, (int)relativePos.y);
 }
 
 void CRenderWindow::OnKeyboardAction(unsigned int key, const char* name, bool down)

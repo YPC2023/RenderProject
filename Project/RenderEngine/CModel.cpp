@@ -10,27 +10,16 @@ CModel::CModel()
     m_nID = ++index;
     m_bOK = true;
     m_Model = glm::mat4(1.0f);
+    m_IsCoordinate = false;
+    ResetTranslation();
+    ResetRotation();
+    ResetScale();
 }
 
 CModel::CModel(const std::string& strPath) : CModel()
 {
     m_bOK = LoadModel(strPath);
 }
-
-/*
-void CModel::Render(const CShader& shader)
-{
-    shader.setMat4("model", m_Model);
-    SetRenderId(shader);
-    SetSelected(shader);
-    for (size_t index = 0; index < m_vec_Mesh.size(); ++index) {
-        if (m_vec_Mesh[index]) {
-            m_vec_Mesh[index]->Render(shader);
-        }
-    }
-    
-}
-*/
 
 bool CModel::SetPath(const std::string& strPath)
 {
@@ -56,11 +45,65 @@ CMesh* CModel::GetFirstMesh()
 void CModel::SetModel(const glm::mat4& model)
 {
     m_Model = model;
-};
+}
 
-const glm::mat4& CModel::GetModel()
+void CModel::SetTranslation(const glm::vec3& translation)
 {
-    return m_Model;
+    m_Translation = translation;
+}
+
+const glm::vec3& CModel::GetTranslation()
+{
+    return m_Translation;
+}
+
+void CModel::ResetTranslation()
+{
+    m_Translation = glm::vec3(0.0f);
+}
+
+void CModel::SetRotation(const glm::vec3& rotation)
+{
+    m_Rotation = rotation;
+}
+
+const glm::vec3& CModel::GetRotation()
+{
+    return m_Rotation;
+}
+
+void CModel::ResetRotation()
+{
+    m_Rotation = glm::vec3(0.0f);
+}
+
+void CModel::SetScale(const glm::vec3& scale)
+{
+    m_Scale = scale;
+}
+
+const glm::vec3& CModel::GetScale()
+{
+    return m_Scale;
+}
+
+void CModel::ResetScale()
+{
+    m_Scale = glm::vec3(1.0f);
+}
+
+void CModel::ActionTransform()
+{
+    m_Model = glm::translate(m_Model, m_Translation);
+    m_Model = glm::scale(m_Model, m_Scale);
+}
+
+glm::mat4 CModel::GetModel()
+{
+    glm::mat4 model = glm::translate(m_Model, m_Translation);
+
+    model = glm::scale(model, m_Scale);
+    return model;
 }
 
 size_t CModel::GetMeshCount()
@@ -232,23 +275,3 @@ std::vector<CMesh::S_TEXTURE> CModel::LoadMaterialTextures(aiMaterial* mat, aiTe
     }
     return textures;
 }
-/*
-void CModel::SetRenderId(const CShader& shader)
-{
-    shader.use();
-    shader.setBool("renderID", m_bRenderId);
-    if (m_bRenderId) {
-        float v3 = (float)((m_nID >> 24) & 0xFF);
-        float v2 = (float)((m_nID >> 16) & 0xFF);
-        float v1 = (float)((m_nID >> 8) & 0xFF);
-        float v0 = (float)(m_nID & 0xFF);
-        shader.setVec4("objectID", glm::vec4(v0 / 255, v1 / 255, v2 / 255, v3 / 255));
-    }
-}
-
-void CModel::SetSelected(const CShader& shader)
-{
-    shader.use();
-    shader.setBool("hasSelected", m_nID == m_nSelectedId);
-}
-*/

@@ -14,7 +14,7 @@ public:
 public:
 	void OnRender() override;
 	void OnSize(int x, int y) override;
-	void OnMouseAction(unsigned int key, bool down, int x, int y) override;
+	void OnMouseAction(unsigned int key, E_MOUSE_ACTION action, int x, int y) override;
 	void OnKeyboardAction(unsigned int key, const char* name, bool down) override;
 private:
 	ImVec2	GetRelativePosition(const ImVec2& point);

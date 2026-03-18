@@ -23,8 +23,14 @@ public:
 	void UnInitialize() override;
 private:
 	unsigned int GetSelectId(int x, int y);
+	void SelectAction(int originX, int originY);
+	glm::vec3 GetRayDirection(double mouseX, double mouseY);
+	float GetMovementOnAxis(glm::vec3 rayDir, glm::vec3 camPos, glm::vec3 modelPos, glm::vec3 axis);
+
 protected:
-	void OnSelectAction(int originX, int originY, float x, float y) override;
+	void OnMouseLeftDown(int originX, int originY, float x, float y) override;
+	void OnMouseLeftUp(int originX, int originY, float x, float y) override;
+	void OnMouseLeftMove(int originX, int originY, float x, float y) override;
 	Config* GetConfig() override;
 private:
 	void OnRender(CRender* pRender);
@@ -57,6 +63,8 @@ private:
 	CModel* m_pModelCoord;
 	CModel* m_pModelChess;
 
+	CModel* m_pModelSelected;
+
 	CFramebuffer* m_pNormalFramebuffer;
 	CFramebuffer* m_pSelectFramebuffer;
 
@@ -66,6 +74,12 @@ private:
 
 	CRender* m_pNormalRender;
 	CRender* m_pSelectRender;
+
+private:
+	bool		m_bLeftMouseMoved;
+	float		m_StartPosition;
+	glm::vec3	m_ModelPosition;
+	glm::vec3	m_AxisTransform;
 
 };
 

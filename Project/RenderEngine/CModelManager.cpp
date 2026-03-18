@@ -35,3 +35,11 @@ void CModelManager::SelectedModel(unsigned int id)
 {
 	CModel::SelectModel(id);
 }
+
+CModel* CModelManager::FindModel(unsigned int id)
+{
+	if (m_map_Model.count(id)) {
+		return m_map_Model[id];
+	}
+	return 0;
+}

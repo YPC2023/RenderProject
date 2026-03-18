@@ -3,6 +3,9 @@
 
 #include <vector>
 #include "CUtils.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -15,15 +18,30 @@ public:
 	CModel();
 	CModel(const std::string& strPth);
 public:
-	//void Render(const CShader& shader);
-public:
 	bool SetPath(const std::string& strPath);
 	bool IsOK() { return m_bOK; }
 	void AppendMesh(CMesh* pMesh);
 	CMesh* GetFirstMesh();
 	void SetModel(const glm::mat4& model);
+	void SetTranslation(const glm::vec3& translation);
+	const glm::vec3& GetTranslation();
+	void ResetTranslation();
+
+	void SetRotation(const glm::vec3& rotation);
+	const glm::vec3& GetRotation();
+	void ResetRotation();
+
+	void SetScale(const glm::vec3& scale);
+	const glm::vec3& GetScale();
+	void ResetScale();
+
+	void ActionTransform();
+
+	void SetCoordinate(bool bYes = true) { m_IsCoordinate = bYes; }
+	bool IsCoordinate() { return m_IsCoordinate; }
+	glm::vec3 GetCoordValue() { return m_AxisValue; }
 public:
-	const glm::mat4& GetModel() override;
+	glm::mat4 GetModel() override;
 	size_t GetMeshCount() override;
 	IMeshInterface* GetMesh(size_t index) override;
 	unsigned int GetID() override;
@@ -36,8 +54,6 @@ private:
 	CMesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
 	std::vector<CMesh::S_TEXTURE> LoadMaterialTextures(aiMaterial* mat, 
 		aiTextureType type, std::string typeName);
-	//void SetRenderId(const CShader& shader);
-	//void SetSelected(const CShader& shader);
 private:
 	static bool				m_bRenderId;
 	static unsigned int		m_nSelectedId;
@@ -48,6 +64,13 @@ private:
 	std::vector<CMesh*>		m_vec_Mesh;
 	std::string				m_strRootPath;
 	glm::mat4				m_Model;
+private:
+	glm::vec3				m_Translation;
+	glm::vec3				m_Rotation;
+	glm::vec3				m_Scale;
+private:
+	bool					m_IsCoordinate;
+	glm::vec3				m_AxisValue;
 };
 
 
