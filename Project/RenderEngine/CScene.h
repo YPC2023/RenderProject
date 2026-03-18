@@ -25,6 +25,7 @@ private:
 	unsigned int GetSelectId(int x, int y);
 	void SelectAction(int originX, int originY);
 	glm::vec3 GetRayDirection(double mouseX, double mouseY);
+	glm::vec3 GetRayDirection2(double mouseX, double mouseY);
 	float GetMovementOnAxis(glm::vec3 rayDir, glm::vec3 camPos, glm::vec3 modelPos, glm::vec3 axis);
 
 protected:
@@ -62,6 +63,10 @@ private:
 	CModel* m_pModelFile;
 	CModel* m_pModelCoord;
 	CModel* m_pModelChess;
+	CModel* m_pModelColumn;
+	CModel* m_pModelSphere;	// ÇòÌå
+	CModel* m_pModelCone; // Ô²×¶Ìå
+	CModel* m_pModelTorus; // Ô²»·
 
 	CModel* m_pModelSelected;
 

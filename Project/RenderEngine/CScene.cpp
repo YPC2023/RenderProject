@@ -10,6 +10,10 @@ CScene::CScene()
     m_pModelFile = 0;
     m_pModelCoord = 0;
     m_pModelChess = 0;
+    m_pModelColumn = 0;
+    m_pModelCone = 0;
+    m_pModelSphere = 0;
+    m_pModelTorus = 0;
 
     m_pModelSelected = 0;
 
@@ -122,6 +126,42 @@ glm::vec3 CScene::GetRayDirection(double mouseX, double mouseY)
     return glm::normalize(ray_world);
 }
 
+glm::vec3 CScene::GetRayDirection2(double mouseX, double mouseY)
+{
+    int width = m_pConfig->GetViewportWidth();
+    int height = m_pConfig->GetViewportHeight();
+    const glm::mat4& view = m_pCamera->GetView();
+    const glm::mat4& projection = m_pCamera->GetProjection();
+
+    // 1. 获取视口定义 [x, y, width, height]
+    glm::vec4 viewport = glm::vec4(0, 0, width, height);
+
+    // 2. 转换鼠标坐标
+    // GLFW 等库的 y 是自顶向下的，而 OpenGL 的 unProject 预期 y 是自底向上的
+    float winX = (float)mouseX;
+    float winY = (float)height - (float)mouseY;
+
+    // 3. 计算近裁剪面上的点 (z = 0.0 在 unProject 中映射到 NDC 的 -1)
+    glm::vec3 nearPos = glm::unProject(
+        glm::vec3(winX, winY, 0.0f),
+        view,
+        projection,
+        viewport
+    );
+
+    // 4. 计算远裁剪面上的点 (z = 1.0 在 unProject 中映射到 NDC 的 1)
+    glm::vec3 farPos = glm::unProject(
+        glm::vec3(winX, winY, 1.0f),
+        view,
+        projection,
+        viewport
+    );
+
+    //m_pModelColumn = CObjectManager::GetInstance().GetColumnModel(farPos, nearPos, 0.01f);
+    // 5. 计算方向向量并归一化
+    return glm::normalize(farPos - nearPos);
+}
+
 // 输入：鼠标射线向量 v, 相机位置 O, 模型当前位置 P0, 轴向量 u
 // 输出：模型沿轴移动后的距离
 float CScene::GetMovementOnAxis(glm::vec3 rayDir, glm::vec3 camPos, glm::vec3 modelPos, glm::vec3 axis)
@@ -150,7 +190,7 @@ void CScene::OnMouseLeftDown(int originX, int originY, float x, float y)
     if (0 != m_pModelSelected) {
         m_ModelPosition = m_pModelSelected->GetTranslation();
         m_AxisTransform = glm::vec3(1.0f, 0.0f, 0.0f);
-        glm::vec3 rayDir = GetRayDirection(originX, originY);
+        glm::vec3 rayDir = GetRayDirection2(originX, originY);
         m_StartPosition = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
     }
 }
@@ -171,7 +211,7 @@ void CScene::OnMouseLeftMove(int originX, int originY, float x, float y)
 {
     if (0 != m_pModelSelected) {
         m_bLeftMouseMoved = true;
-        glm::vec3 rayDir = GetRayDirection(originX, originY);
+        glm::vec3 rayDir = GetRayDirection2(originX, originY);
         float current = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
 
         m_pModelSelected->SetTranslation(m_ModelPosition + m_AxisTransform * (m_StartPosition - current));
@@ -197,6 +237,18 @@ void CScene::OnRender(CRender* pRender)
         }
         if (0 != m_pModelChess) {
             pRender->Render(m_pModelChess);
+        }
+        if (0 != m_pModelColumn) {
+            pRender->Render(m_pModelColumn);
+        }
+        if (0 != m_pModelCone) {
+            pRender->Render(m_pModelCone);
+        }
+        if (0 != m_pModelSphere) {
+            pRender->Render(m_pModelSphere);
+        }
+        if (0 != m_pModelTorus) {
+            pRender->Render(m_pModelTorus);
         }
     }
 }
@@ -326,6 +378,30 @@ bool CScene::InitializeModel()
         return false;
     }
     m_pModelChess->SetModel(glm::scale(glm::mat4(1.0f), glm::vec3(100.0f, 100.0f, 100.0f)));
+
+    glm::vec3 start(0.0f, 0.0f, 0.0f);
+    glm::vec3 end(0.0f, 3.0f, 0.0f);
+    float radius = 0.1f;
+    m_pModelColumn = CObjectManager::GetInstance().GetColumnModel(start, end, radius);
+    if (0 == m_pModelColumn) {
+        PRINTLOG("Fail to create column model");
+        return false;
+    }
+    m_pModelCone = CObjectManager::GetInstance().GetConeModel(end, end - start, 0.5f, radius * 5);
+    if (0 == m_pModelCone) {
+        PRINTLOG("Fail to create cone model");
+        return false;
+    }
+    m_pModelSphere = CObjectManager::GetInstance().GetSphereModel(glm::vec3(0.0f, 0.0f, 0.0f));
+    if (0 == m_pModelSphere) {
+        PRINTLOG("Fail to create sphere model");
+        return false;
+    }
+    m_pModelTorus = CObjectManager::GetInstance().GetTorusModel(start, glm::vec3(1.0f, 0.0f, 0.0f), 1.0f, 0.05f);
+    if (0 == m_pModelTorus) {
+        PRINTLOG("Fail to create torus model");
+        return false;
+    }
     return true;
 }
 
