@@ -1,10 +1,12 @@
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <vector>
 #include "CUtils.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -27,8 +29,8 @@ public:
 	const glm::vec3& GetTranslation();
 	void ResetTranslation();
 
-	void SetRotation(const glm::vec3& rotation);
-	const glm::vec3& GetRotation();
+	void SetRotation(const glm::quat& rotation);
+	const glm::quat& GetRotation();
 	void ResetRotation();
 
 	void SetScale(const glm::vec3& scale);
@@ -66,7 +68,7 @@ private:
 	glm::mat4				m_Model;
 private:
 	glm::vec3				m_Translation;
-	glm::vec3				m_Rotation;
+	glm::quat				m_Rotation;
 	glm::vec3				m_Scale;
 private:
 	bool					m_IsCoordinate;

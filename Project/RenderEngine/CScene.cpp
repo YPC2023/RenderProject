@@ -22,7 +22,9 @@ CScene::CScene()
 
     m_pCamera = 0;
 
+    m_AxisTransform = glm::vec3(1.0f, 0.0f, 0.0f);
     m_bLeftMouseMoved = false;
+    m_MouseActionType = E_MOUSE_ACTION_VALIDATE;
 }
 
 bool CScene::Initialize()
@@ -81,19 +83,6 @@ unsigned int CScene::GetSelectId(int x, int y)
             (nSelectId >> 8) & 0xFF, nSelectId & 0xFF, nSelectId);*/
     }
     return nSelectId;
-}
-
-void CScene::SelectAction(int originX, int originY)
-{
-    RenderSelect();
-
-    unsigned int nSelectId = GetSelectId(originX, originY);
-
-    if (0 != m_pNormalRender) {
-        m_pNormalRender->SetSelectId(nSelectId);
-    }
-
-    m_pModelSelected = CModelManager::GetInstance().FindModel(nSelectId);
 }
 
 glm::vec3 CScene::GetRayDirection(double mouseX, double mouseY) 
@@ -185,36 +174,174 @@ float CScene::GetMovementOnAxis(glm::vec3 rayDir, glm::vec3 camPos, glm::vec3 mo
     return (b * e - d) / denominator;
 }
 
+bool CScene::GetRayPlaneIntersection(
+    const glm::vec3& rayOrigin,
+    const glm::vec3& rayDir,
+    const glm::vec3& planePoint,
+    const glm::vec3& planeNormal,
+    glm::vec3& outIntersection)
+{
+    float denom = glm::dot(planeNormal, rayDir);
+    // 确保射线不与平面平行（阈值可微调）
+    if (std::abs(denom) > 1e-6f) {
+        float t = glm::dot(planePoint - rayOrigin, planeNormal) / denom;
+        if (t >= 0) {
+            outIntersection = rayOrigin + t * rayDir;
+            return true;
+        }
+    }
+    return false;
+}
+
+float CScene::CalculateAngleOnPlane(
+    const glm::vec3& intersection,
+    const glm::vec3& centerPoint,
+    const glm::vec3& rotationAxis)
+{
+    glm::vec3 normAxis = glm::normalize(rotationAxis);
+
+    // 1. 构建平面局部坐标系的基向量 (Tangent 和 Bitangent)
+    glm::vec3 tangentX;
+    if (std::abs(normAxis.y) < 0.9f)
+        tangentX = glm::normalize(glm::cross(normAxis, glm::vec3(0, 1, 0)));
+    else
+        tangentX = glm::normalize(glm::cross(normAxis, glm::vec3(1, 0, 0)));
+
+    glm::vec3 tangentY = glm::cross(normAxis, tangentX);
+
+    // 2. 计算交点相对于中心点的偏移向量
+    glm::vec3 localVec = intersection - centerPoint;
+
+    // 3. 投影到 X 和 Y 轴得到 2D 坐标
+    float x = glm::dot(localVec, tangentX);
+    float y = glm::dot(localVec, tangentY);
+
+    // 4. 返回方位角 (范围 -PI 到 PI)
+    return std::atan2(y, x);
+}
+
+void CScene::OnModelSelectedAction(int originX, int originY)
+{
+    if (0 == m_pNormalRender) {
+        return;
+    }
+    RenderSelect();
+    unsigned int nSelectId = GetSelectId(originX, originY);
+    m_pNormalRender->SetSelectId(nSelectId);
+    m_pModelSelected = CModelManager::GetInstance().FindModel(nSelectId);
+}
+
+void CScene::OnModelTranslateActionBegin(int originX, int originY)
+{
+    if (0 == m_pModelSelected) {
+        return;
+    }
+    m_ModelPosition = m_pModelSelected->GetTranslation();
+    m_AxisTransform = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 rayDir = GetRayDirection2(originX, originY);
+    m_StartPosition = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
+}
+
+void CScene::OnModelTranslateActionEnd(int originX, int originY)
+{
+    if (!m_bLeftMouseMoved || 0 == m_pModelSelected) {
+        return;
+    }
+    m_pModelSelected->ActionTransform();
+    m_pModelSelected->ResetTranslation();
+}
+
+void CScene::OnModelTranslateActionIng(int originX, int originY)
+{
+    if (0 == m_pModelSelected) {
+        return;
+    }
+    m_bLeftMouseMoved = true;
+    glm::vec3 rayDir = GetRayDirection2(originX, originY);
+    float current = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
+    m_pModelSelected->SetTranslation(m_ModelPosition + m_AxisTransform * (m_StartPosition - current));
+}
+
+void CScene::OnModelRotateActionBegin(int originX, int originY)
+{
+    if (0 == m_pModelSelected) {
+        return;
+    }
+    glm::vec3 rayDir = GetRayDirection(originX, originY);
+    glm::vec3 intersection;
+    m_ModelPosition = m_pModelSelected->GetTranslation();
+
+    if (GetRayPlaneIntersection(m_pConfig->GetCameraPos(), rayDir, m_ModelPosition, m_AxisTransform, intersection)) {
+        // A. 保存点击时的初始方位角
+        m_StartRotateAngle = CalculateAngleOnPlane(intersection, m_ModelPosition, m_AxisTransform);
+    }
+}
+
+void CScene::OnModelRotateActionEnd(int originX, int originY)
+{
+    if (0 == m_pModelSelected) {
+        return;
+    }
+    m_pModelSelected->ActionTransform();
+    m_pModelSelected->ResetRotation();
+}
+
+void CScene::OnModelRotateActionIng(int originX, int originY)
+{
+    if (0 == m_pModelSelected) {
+        return;
+    }
+    // 1. 获取当前射线
+    glm::vec3 rayDir = GetRayDirection(originX, originY);
+    glm::vec3 intersection;
+
+    if (GetRayPlaneIntersection(m_pConfig->GetCameraPos(), rayDir, m_ModelPosition, m_AxisTransform, intersection)) {
+        // C. 计算当前的方位角
+        float currentAngle = CalculateAngleOnPlane(intersection, m_ModelPosition, m_AxisTransform);
+
+        // D. 计算角度差值
+        float deltaAngle = currentAngle - m_StartRotateAngle;
+        // E. 构造增量四元数，并叠加到初始姿态上
+        glm::quat deltaQuat = glm::angleAxis(deltaAngle, glm::normalize(m_AxisTransform));
+        m_pModelSelected->SetRotation(deltaQuat);
+        m_bLeftMouseMoved = true;
+    }
+}
+
 void CScene::OnMouseLeftDown(int originX, int originY, float x, float y)
 {
-    if (0 != m_pModelSelected) {
-        m_ModelPosition = m_pModelSelected->GetTranslation();
-        m_AxisTransform = glm::vec3(1.0f, 0.0f, 0.0f);
-        glm::vec3 rayDir = GetRayDirection2(originX, originY);
-        m_StartPosition = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
+    m_MouseActionType = E_MOUSE_ACTION_MOVE;
+    if (E_MOUSE_ACTION_MOVE == m_MouseActionType) {
+        OnModelTranslateActionBegin(originX, originY);
+    }
+    else if (E_MOUSE_ACTION_ROTATE == m_MouseActionType) {
+        OnModelRotateActionBegin(originX, originY);
     }
 }
 
 void CScene::OnMouseLeftUp(int originX, int originY, float x, float y)
 {
-    if (m_bLeftMouseMoved && 0 != m_pModelSelected) {
-        m_pModelSelected->ActionTransform();
-        m_pModelSelected->ResetTranslation();
+    if (!m_bLeftMouseMoved) {
+        OnModelSelectedAction(originX, originY);
+        return;
     }
-    else {
-        SelectAction(originX, originY);
+    if (E_MOUSE_ACTION_MOVE == m_MouseActionType) {
+        OnModelTranslateActionEnd(originX, originY);
     }
+    else if (E_MOUSE_ACTION_ROTATE == m_MouseActionType) {
+        OnModelRotateActionEnd(originX, originY);
+    }
+    
     m_bLeftMouseMoved = false;
 }
 
 void CScene::OnMouseLeftMove(int originX, int originY, float x, float y)
 {
-    if (0 != m_pModelSelected) {
-        m_bLeftMouseMoved = true;
-        glm::vec3 rayDir = GetRayDirection2(originX, originY);
-        float current = GetMovementOnAxis(rayDir, m_pCamera->GetPosition(), m_ModelPosition, m_AxisTransform);
-
-        m_pModelSelected->SetTranslation(m_ModelPosition + m_AxisTransform * (m_StartPosition - current));
+    if (E_MOUSE_ACTION_MOVE == m_MouseActionType) {
+        OnModelTranslateActionIng(originX, originY);
+    }
+    else if (E_MOUSE_ACTION_ROTATE == m_MouseActionType) {
+        OnModelRotateActionIng(originX, originY);
     }
 }
 

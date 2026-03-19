@@ -62,12 +62,12 @@ void CModel::ResetTranslation()
     m_Translation = glm::vec3(0.0f);
 }
 
-void CModel::SetRotation(const glm::vec3& rotation)
+void CModel::SetRotation(const glm::quat& rotation)
 {
     m_Rotation = rotation;
 }
 
-const glm::vec3& CModel::GetRotation()
+const glm::quat& CModel::GetRotation()
 {
     return m_Rotation;
 }
@@ -95,13 +95,14 @@ void CModel::ResetScale()
 void CModel::ActionTransform()
 {
     m_Model = glm::translate(m_Model, m_Translation);
+    m_Model = m_Model * glm::mat4_cast(m_Rotation);
     m_Model = glm::scale(m_Model, m_Scale);
 }
 
 glm::mat4 CModel::GetModel()
 {
     glm::mat4 model = glm::translate(m_Model, m_Translation);
-
+    model = model* glm::toMat4(m_Rotation);
     model = glm::scale(model, m_Scale);
     return model;
 }
