@@ -321,6 +321,8 @@ void CScene::OnMouseWheel(float delta)
 	if (newScale < 0.1f) newScale = 0.1f;
 	if (newScale > 10.0f) newScale = 10.0f;
 	m_pModelSelected->SetScale(glm::vec3(newScale, newScale, newScale));
+    m_pModelSelected->ActionTransform();
+    m_pModelSelected->ResetScale();
 }
 void CScene::OnMouseLeftDown(int originX, int originY, float x, float y)
 {
