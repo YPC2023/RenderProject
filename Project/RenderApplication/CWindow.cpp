@@ -119,6 +119,11 @@ void CWindow::CheckMouseAction()
 		OnMouseAction(pressKey, E_MOUSE_MOVE, (int)curPosition.x, (int)curPosition.y);
 		lastPosition = curPosition;
 	}
+	// ¼ì²â¹öÂÖ
+	float wheel = ImGui::GetIO().MouseWheel;
+	if (wheel != 0.0f) {
+		OnMouseAction(0, E_MOUSE_WHEEL, (int)(wheel * 100), (int)curPosition.y);
+	}
 }
 
 void CWindow::CheckKeyboardAction()

@@ -25,6 +25,11 @@ glm::vec2 Controller::TranToViewport(int x, int y)
 
 void Controller::MouseAction(unsigned int key, int action, int x, int y)
 {
+	// 滚轮事件
+	if (action == 3) {
+		OnMouseWheel(x / 100.0f);
+		return;
+	}
 	glm::vec2 point = TranToViewport(x, y);
 	if (0.0f > point.x || 0.0f > point.y || 1.0f < point.x || 1.0f < point.y) {
 		return;
@@ -60,4 +65,9 @@ void Controller::OnMouseLeftUp(int originX, int originY, float x, float y)
 void Controller::OnMouseLeftMove(int originX, int originY, float x, float y)
 {
 
+}
+
+void Controller::OnMouseWheel(float delta)
+{
+	// 子类重写实现滚轮功能
 }

@@ -19,5 +19,6 @@ protected:
 	virtual void OnMouseLeftDown(int originX, int originY, float x, float y);
 	virtual void OnMouseLeftUp(int originX, int originY, float x, float y);
 	virtual void OnMouseLeftMove(int originX, int originY, float x, float y);
+	virtual void OnMouseWheel(float delta);
 };
 

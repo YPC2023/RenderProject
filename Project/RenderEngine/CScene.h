@@ -56,6 +56,7 @@ private:
 	void OnModelRotateActionEnd(int originX, int originY);
 	void OnModelRotateActionIng(int originX, int originY);
 protected:
+	void OnMouseWheel(float delta) override;
 	void OnMouseLeftDown(int originX, int originY, float x, float y) override;
 	void OnMouseLeftUp(int originX, int originY, float x, float y) override;
 	void OnMouseLeftMove(int originX, int originY, float x, float y) override;

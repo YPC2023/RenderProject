@@ -308,6 +308,20 @@ void CScene::OnModelRotateActionIng(int originX, int originY)
     }
 }
 
+
+void CScene::OnMouseWheel(float delta)
+{
+	if (0 == m_pModelSelected) {
+		return;
+	}
+	// 前滚放大(delta>0)，后滚缩小(delta<0)
+	float scaleDelta = delta * 0.1f;
+	glm::vec3 currentScale = m_pModelSelected->GetScale();
+	float newScale = currentScale.x + scaleDelta;
+	if (newScale < 0.1f) newScale = 0.1f;
+	if (newScale > 10.0f) newScale = 10.0f;
+	m_pModelSelected->SetScale(glm::vec3(newScale, newScale, newScale));
+}
 void CScene::OnMouseLeftDown(int originX, int originY, float x, float y)
 {
     m_MouseActionType = E_MOUSE_ACTION_MOVE;

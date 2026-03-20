@@ -9,7 +9,8 @@ public:
 	{
 		E_MOUSE_DOWN,
 		E_MOUSE_UP,
-		E_MOUSE_MOVE
+		E_MOUSE_MOVE,
+		E_MOUSE_WHEEL
 	}E_MOUSE_ACTION;
 public:
 	virtual void OnRender() = 0;

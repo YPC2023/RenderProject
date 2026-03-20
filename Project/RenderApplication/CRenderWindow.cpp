@@ -41,9 +41,13 @@ void CRenderWindow::OnSize(int x, int y)
 
 void CRenderWindow::OnMouseAction(unsigned int key, E_MOUSE_ACTION action, int x, int y)
 {
-	//PRINTLOG("%s[%d:%s](%d,%d)", m_strName.c_str(), key, down ? "DOWN" : "UP", x, y);
-	ImVec2 relativePos = GetRelativePosition(ImGui::GetIO().MousePos);
-	CEngineManager::GetInstance().GetEngine().MouseAction(key, (int)action, (int)relativePos.x, (int)relativePos.y);
+	if (action == E_MOUSE_WHEEL) {
+		CEngineManager::GetInstance().GetEngine().MouseAction(key, (int)action, x, y);
+	} else {
+		//PRINTLOG("%s[%d:%s](%d,%d)", m_strName.c_str(), key, down ? "DOWN" : "UP", x, y);
+		ImVec2 relativePos = GetRelativePosition(ImGui::GetIO().MousePos);
+		CEngineManager::GetInstance().GetEngine().MouseAction(key, (int)action, (int)relativePos.x, (int)relativePos.y);
+	}
 }
 
 void CRenderWindow::OnKeyboardAction(unsigned int key, const char* name, bool down)
